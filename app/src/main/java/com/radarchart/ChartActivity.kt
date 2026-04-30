@@ -13,6 +13,9 @@ import com.github.mikephil.charting.data.RadarData
 import com.github.mikephil.charting.data.RadarDataSet
 import com.github.mikephil.charting.data.RadarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.highlight.Highlight
+import com.github.mikephil.charting.interfaces.datasets.IRadarDataSet
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 
 class ChartActivity : AppCompatActivity() {
 
@@ -84,11 +87,8 @@ class ChartActivity : AppCompatActivity() {
         legend.textColor = Color.parseColor("#37474F")
 
         // Touch listener
-        radarChart.setOnChartValueSelectedListener(object : RadarChart.OnChartValueSelectedListener {
-            override fun onValueSelected(entry: com.github.mikephil.charting.data.Entry?, dataSetIndex: Int, highlight: com.github.mikephil.charting.highlight.Highlight?) {
-                // Show tooltip or details
-            }
-
+        radarChart.setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
+            override fun onValueSelected(e: com.github.mikephil.charting.data.Entry?, h: Highlight?) {}
             override fun onNothingSelected() {}
         })
     }
@@ -130,7 +130,8 @@ class ChartActivity : AppCompatActivity() {
             entries.add(dataSet)
         }
 
-        val radarData = RadarData(entries)
+        @Suppress("UNCHECKED_CAST")
+        val radarData = RadarData(entries as List<IRadarDataSet>)
         radarChart.data = radarData
         radarChart.animateXY(1000, 1000)
         radarChart.invalidate()
