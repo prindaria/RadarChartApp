@@ -6,42 +6,49 @@
     android:orientation="vertical"
     android:background="@color/background">
 
-    <!-- 顶部工具栏 -->
+    <!-- 顶部搜索栏 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp"
         android:background="@color/card_background"
-        android:elevation="4dp">
+        android:elevation="4dp"
+        android:gravity="center_vertical">
 
-        <EditText
-            android:id="@+id/searchEditText"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="@string/search_hint"
-            android:background="@android:drawable/edit_text"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:inputType="text"
-            android:maxLines="1"/>
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+            app:boxBackgroundColor="@android:color/white">
 
-        <Button
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/searchEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/search_hint"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textSize="14sp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/selectAllButton"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:text="@string/select_all"
             android:layout_marginStart="8dp"
-            android:textSize="12sp"/>
+            android:textSize="12sp"
+            style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/clearAllButton"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:text="@string/clear_all"
-            android:layout_marginStart="4dp"
-            android:textSize="12sp"/>
+            android:textSize="12sp"
+            style="@style/Widget.MaterialComponents.Button.TextButton"/>
     </LinearLayout>
 
     <!-- 产品列表区域 -->
@@ -56,7 +63,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"/>
-
     </ScrollView>
 
     <!-- 底部控制面板 -->
@@ -69,43 +75,25 @@
         android:elevation="8dp"
         android:gravity="center_vertical">
 
-        <CheckBox
+        <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/highlightCheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/highlight_winner"
             android:checked="true"/>
 
-        <RadioGroup
-            android:id="@+id/modeRadioGroup"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginStart="16dp">
-
-            <RadioButton
-                android:id="@+id/rainbowMode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_rainbow"
-                android:checked="true"/>
-
-            <RadioButton
-                android:id="@+id/lineStyleMode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_linestyle"
-                android:layout_marginStart="8dp"/>
-        </RadioGroup>
-
-        <Button
-            android:id="@+id/confirmButton"
+        <View
             android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/confirmButton"
+            android:layout_width="wrap_content"
             android:layout_height="48dp"
-            android:layout_weight="1"
             android:text="@string/confirm"
-            android:layout_marginStart="16dp"
-            android:backgroundTint="@color/primary"/>
+            android:textSize="14sp"
+            app:backgroundTint="@color/primary"/>
     </LinearLayout>
 
 </LinearLayout>

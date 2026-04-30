@@ -1,69 +1,35 @@
 package com.radarchart
 
-import android.os.Parcel
-import android.os.Parcelable
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
+import android.view.Gravity
 import android.view.View
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 
 class MainActivity : AppCompatActivity() {
 
+    private val TAG = "MainActivity"
+
     private lateinit var searchEditText: TextInputEditText
     private lateinit var productListContainer: LinearLayout
-    private lateinit var selectAllButton: AppCompatButton
-    private lateinit var clearAllButton: AppCompatButton
-    private lateinit var highlightCheckBox: CheckBox
-    private lateinit var confirmButton: AppCompatButton
+    private lateinit var selectAllButton: MaterialButton
+    private lateinit var clearAllButton: MaterialButton
+    private lateinit var highlightCheckBox: MaterialCheckBox
+    private lateinit var confirmButton: MaterialButton
 
     private val productData = mutableListOf<Product>()
     private val checkedProducts = mutableSetOf<Product>()
     private val productCheckboxes = mutableMapOf<Product, CheckBox>()
-
-    data class Product(
-        val brand: String,
-        val series: String,
-        val name: String,
-        val energy: Int,
-        val grade: Int,
-        val corrosion: Int,
-        val lowTemp: Int,
-        val highTemp: Int,
-        val pressure: Int
-    ) : Parcelable {
-        constructor(parcel: Parcel) : this(
-            parcel.readString() ?: "",
-            parcel.readString() ?: "",
-            parcel.readString() ?: "",
-            parcel.readInt(),
-            parcel.readInt(),
-            parcel.readInt(),
-            parcel.readInt(),
-            parcel.readInt(),
-            parcel.readInt()
-        )
-
-        override fun writeToParcel(parcel: Parcel, flags: Int) {
-            parcel.writeString(brand)
-            parcel.writeString(series)
-            parcel.writeString(name)
-            parcel.writeInt(energy)
-            parcel.writeInt(grade)
-            parcel.writeInt(corrosion)
-            parcel.writeInt(lowTemp)
-            parcel.writeInt(highTemp)
-            parcel.writeInt(pressure)
-        }
-
-        override fun describeContents(): Int = 0
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,46 +54,81 @@ class MainActivity : AppCompatActivity() {
         try {
             val inputStream = assets.open("products.csv")
             val reader = inputStream.bufferedReader()
-            reader.readLine() // Skip header
+
+            // Skip potential BOM (UTF-8 BOM = EF BB BF)
+            var firstLine = reader.readLine() ?: ""
+            if (firstLine.startsWith("\uFEFF")) {
+                firstLine = firstLine.substring(1)
+            }
+            if (firstLine.isNotEmpty() && !firstLine.contains("品牌")) {
+                // First non-BOM line is actually data, parse it
+                parseCsvLine(firstLine)?.let { productData.add(it) }
+            }
 
             reader.forEachLine { line ->
-                val parts = line.split(",")
-                if (parts.size >= 9) {
-                    val product = Product(
-                        brand = parts[0],
-                        series = parts[1],
-                        name = parts[2],
-                        energy = parts[3].toIntOrNull() ?: 0,
-                        grade = parts[4].toIntOrNull() ?: 0,
-                        corrosion = parts[5].toIntOrNull() ?: 0,
-                        lowTemp = parts[6].toIntOrNull() ?: 0,
-                        highTemp = parts[7].toIntOrNull() ?: 0,
-                        pressure = parts[8].toIntOrNull() ?: 0
-                    )
-                    productData.add(product)
+                if (line.isNotBlank()) {
+                    parseCsvLine(line)?.let { productData.add(it) }
                 }
             }
             reader.close()
+
+            Log.d(TAG, "Loaded ${productData.size} products")
+            if (productData.isEmpty()) {
+                Toast.makeText(this, "数据加载失败，请检查CSV文件", Toast.LENGTH_LONG).show()
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to load data", e)
+            Toast.makeText(this, "数据加载失败: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun parseCsvLine(line: String): Product? {
+        try {
+            // Handle potential BOM
+            val cleanLine = line.replaceFirst("\uFEFF", "")
+            val parts = cleanLine.split(",").map { it.trim() }
+            if (parts.size >= 9) {
+                return Product(
+                    brand = parts[0],
+                    series = parts[1],
+                    name = parts[2],
+                    energy = parts[3].toIntOrNull() ?: 0,
+                    grade = parts[4].toIntOrNull() ?: 0,
+                    corrosion = parts[5].toIntOrNull() ?: 0,
+                    lowTemp = parts[6].toIntOrNull() ?: 0,
+                    highTemp = parts[7].toIntOrNull() ?: 0,
+                    pressure = parts[8].toIntOrNull() ?: 0
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse line: $line", e)
+        }
+        return null
     }
 
     private fun setupListeners() {
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
                 updateProductList(s?.toString() ?: "")
             }
-            override fun afterTextChanged(s: Editable?) {}
         })
 
         selectAllButton.setOnClickListener {
-            productData.forEach { product ->
-                if (!checkedProducts.contains(product)) {
-                    checkedProducts.add(product)
-                    productCheckboxes[product]?.isChecked = true
+            val query = searchEditText.text?.toString() ?: ""
+            val visibleProducts = if (query.isEmpty()) {
+                productData.toList()
+            } else {
+                productData.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                    it.brand.contains(query, ignoreCase = true) ||
+                    it.series.contains(query, ignoreCase = true)
                 }
+            }
+            visibleProducts.forEach { product ->
+                checkedProducts.add(product)
+                productCheckboxes[product]?.isChecked = true
             }
         }
 
@@ -138,23 +139,41 @@ class MainActivity : AppCompatActivity() {
 
         confirmButton.setOnClickListener {
             if (checkedProducts.isEmpty()) {
+                Toast.makeText(this, R.string.please_select, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val highlight = highlightCheckBox.isChecked
-            val selectedProducts = checkedProducts.toList()
+            try {
+                val highlight = highlightCheckBox.isChecked
+                val selectedProducts = ArrayList(checkedProducts.toList())
 
-            val intent = Intent(this, ChartActivity::class.java).apply {
-                putParcelableArrayListExtra("selected_products", ArrayList(selectedProducts))
-                putExtra("highlight_winner", highlight)
+                val intent = Intent(this, ChartActivity::class.java).apply {
+                    putParcelableArrayListExtra("selected_products", selectedProducts)
+                    putExtra("highlight_winner", highlight)
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start ChartActivity", e)
+                Toast.makeText(this, "启动图表失败: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-            startActivity(intent)
         }
     }
 
     private fun updateProductList(query: String) {
         productListContainer.removeAllViews()
         productCheckboxes.clear()
+
+        if (productData.isEmpty()) {
+            val noDataText = TextView(this).apply {
+                text = getString(R.string.no_data)
+                textSize = 14f
+                setTextColor(getColor(R.color.text_secondary))
+                gravity = Gravity.CENTER
+                setPadding(0, 32, 0, 32)
+            }
+            productListContainer.addView(noDataText)
+            return
+        }
 
         val filteredProducts = if (query.isEmpty()) {
             productData
@@ -166,6 +185,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        if (filteredProducts.isEmpty()) {
+            val noDataText = TextView(this).apply {
+                text = getString(R.string.no_data)
+                textSize = 14f
+                setTextColor(getColor(R.color.text_secondary))
+                gravity = Gravity.CENTER
+                setPadding(0, 32, 0, 32)
+            }
+            productListContainer.addView(noDataText)
+            return
+        }
+
         // Group by brand
         val groupedProducts = filteredProducts.groupBy { it.brand }
 
@@ -174,8 +205,9 @@ class MainActivity : AppCompatActivity() {
             val brandText = TextView(this).apply {
                 text = "  $brand"
                 textSize = 14f
-                setTextColor(resources.getColor(R.color.primary, theme))
+                setTextColor(getColor(R.color.primary))
                 setPadding(0, 16, 0, 8)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
             }
             productListContainer.addView(brandText)
 
@@ -189,23 +221,11 @@ class MainActivity : AppCompatActivity() {
                             checkedProducts.remove(product)
                         }
                     }
-                    // Preserve checked state if searching
                     isChecked = checkedProducts.contains(product)
                 }
                 productCheckboxes[product] = checkbox
                 productListContainer.addView(checkbox)
             }
-        }
-
-        if (filteredProducts.isEmpty()) {
-            val noDataText = TextView(this).apply {
-                text = getString(R.string.no_data)
-                textSize = 14f
-                setTextColor(resources.getColor(R.color.text_secondary, theme))
-                gravity = android.view.Gravity.CENTER
-                setPadding(0, 32, 0, 32)
-            }
-            productListContainer.addView(noDataText)
         }
     }
 }
