@@ -7,7 +7,7 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
+import android.view.View
 import com.github.mikephil.charting.charts.RadarChart
 import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
@@ -28,8 +28,8 @@ class ChartActivity : AppCompatActivity() {
     private lateinit var winnerInfoLayout: View
     private lateinit var winnerTextView: TextView
     private lateinit var scoreTextView: TextView
-    private lateinit var backButton: AppCompatButton
-    private lateinit var switchButton: AppCompatButton
+    private lateinit var backButton: View
+    private lateinit var switchButton: View
 
     private val dimensions = arrayOf("节能", "级别", "抗腐蚀", "低温性能", "高温性能", "抗压降")
 
